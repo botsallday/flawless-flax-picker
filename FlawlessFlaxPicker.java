@@ -4,6 +4,7 @@ import org.tribot.script.Script;
 import org.tribot.script.ScriptManifest;
 
 import org.tribot.api2007.types.RSTile;
+import org.tribot.api2007.types.RSArea;
 import org.tribot.api2007.types.RSObject;
 import org.tribot.api.General;
 import org.tribot.api2007.Banking;
@@ -42,31 +43,20 @@ public class FlawlessFlaxPicker extends Script implements Painting {
     private boolean execute = true;
     private final RenderingHints aa = new RenderingHints(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
     Font font = new Font("Verdana", Font.BOLD, 14);
-    private final int FLAX_FIELD_X_MAX = 2749;
-    private final int FLAX_FIELD_X_MIN = 2739;
-    private final int FLAX_FIELD_Y_MIN = 3439;
-    private final int FLAX_FIELD_Y_MAX = 3449;
-    private final int BANK_X_MAX = 2729;
-    private final int BANK_X_MIN = 2722;
-    private final int BANK_Y_MIN = 3490;
-    private final int BANK_Y_MAX = 3493;
+    private final RSArea flax_area = new RSArea(new RSTile(2739, 3439, 0), new RSTile(2749, 3449, 0));
+
+    private final RSArea bank_area = new RSArea(new RSTile(2722, 3490, 0), new RSTile(2729, 3493, 0));
     
     public RSTile getTile(boolean use_bank) {
-    	final int x;
-    	final int y;
     	
     	if (use_bank) {
-    		x = General.random(BANK_X_MIN, BANK_X_MAX);
-        	y = General.random(BANK_Y_MIN, BANK_Y_MAX);
-    	} else {
-    		x = General.random(FLAX_FIELD_X_MIN, FLAX_FIELD_X_MAX);
-        	y = General.random(FLAX_FIELD_Y_MIN, FLAX_FIELD_Y_MAX);
-        	
-    	}
+    		return bank_area.getRandomTile();
+    		
+    	} 
     	
-    	return new RSTile(x, y, 0);
+    	return flax_area.getRandomTile();
     }
-
+    
     public void run() {
     	General.useAntiBanCompliance(true);
     	
@@ -106,9 +96,8 @@ public class FlawlessFlaxPicker extends Script implements Painting {
 
     private State state() {
         // whether or not we need to bank is the variable that drives the script
-        boolean need_to_bank = Inventory.isFull();
         
-        if (need_to_bank && !Banking.isBankScreenOpen() && !Player.isMoving()) {
+        if (Inventory.isFull() && !Banking.isBankScreenOpen() && !Player.isMoving()) {
              if (Banking.isInBank()) {
                  return State.DEPOSIT_ITEMS;
              } else {
