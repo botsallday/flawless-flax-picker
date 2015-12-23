@@ -11,12 +11,10 @@ import org.tribot.api2007.Banking;
 import org.tribot.api2007.Inventory;
 import org.tribot.api2007.Objects;
 import org.tribot.api2007.WebWalking;
-import org.tribot.api.Timing; 
+import org.tribot.api.Timing;
 import org.tribot.script.interfaces.Painting;
 import org.tribot.api2007.Player;
 import java.awt.RenderingHints;
-import org.tribot.api.util.ABCUtil;
-import org.tribot.api2007.Game;
 
 // Paint Imports
 import java.awt.Color; 
@@ -34,7 +32,10 @@ import javax.imageio.ImageIO;
 public class FlawlessFlaxPicker extends Script implements Painting {
     
     // set variables
-	private ABCUtil abc = new ABCUtil();
+	private AntiBan anti_ban = new AntiBan();
+	private Transportation transport = new Transportation();
+	private Banker banker = new Banker();
+	private Clicking clicking = new Clicking();
     private final Image img = getImage("http://s15.postimg.org/izj9po1wr/Flawless_Flax_Picker.png");
     private final int FLAX_PLANT_ID = 7134;
     private static final long startTime = System.currentTimeMillis();
@@ -44,19 +45,7 @@ public class FlawlessFlaxPicker extends Script implements Painting {
     private final RenderingHints aa = new RenderingHints(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
     Font font = new Font("Verdana", Font.BOLD, 14);
     private final RSArea flax_area = new RSArea(new RSTile(2739, 3439, 0), new RSTile(2749, 3449, 0));
-
-    private final RSArea bank_area = new RSArea(new RSTile(2722, 3490, 0), new RSTile(2729, 3493, 0));
-    
-    public RSTile getTile(boolean use_bank) {
-    	
-    	if (use_bank) {
-    		return bank_area.getRandomTile();
-    		
-    	} 
-    	
-    	return flax_area.getRandomTile();
-    }
-    
+    private final RSArea bank_area = new RSArea(new RSTile(2723, 3491, 0), new RSTile(2728, 3493, 0));
     public void run() {
     	General.useAntiBanCompliance(true);
     	
@@ -65,71 +54,74 @@ public class FlawlessFlaxPicker extends Script implements Painting {
             if (state != null) {
                 switch (state) {
                     case WALK_TO_FLAX_FIELD:
-                    	log("Walking to flax field");
-                        walk(false);
+                    	println("Walking to flax field");
+                        WebWalking.walkTo(transport.getTile(flax_area, true));
                         break;
                     case WALK_TO_BANK:
-                    	log("Walking to bank");
-                        walk(true);
+                    	println("Walking to bank");
+                        if (Banking.openBank()) {
+                        	println("Banking");
+                        } else {
+                        	transport.checkRun();
+                        	WebWalking.walkTo(transport.getTile(bank_area, true));
+                        	println("Didnt work");
+                        }
                         break;
                     case DEPOSIT_ITEMS:
-                    	log("Depositing items in bank");
-                        handleBanking();
+                    	println("Depositing items in bank");
+                    	banker.depositAll();
                         break;
                     case PICK_FLAX:
-                    	log("Picking flax");
+                    	println("Picking flax");
                         pickFlax(target_flax);
                         break;
                     case WALKING:
-                    	log("Walking...");
-                    	handleWait();
+                    	println("Walking...");
+                    	checkAntiban();
                     	break;
                     case SOMETHING_WENT_WRONG:
-                    	log("Stopping script, something went wrong");
+                    	println("Stopping script, something went wrong");
                     	execute = false;
                     	break;
                 }
             }
-            General.sleep(892,  2134);
+            General.sleep(50,  250);
         }
     }
 
     private State state() {
         // whether or not we need to bank is the variable that drives the script
-        
-        if (Inventory.isFull() && !Banking.isBankScreenOpen() && !Player.isMoving()) {
-             if (Banking.isInBank()) {
+        if (Inventory.isFull() && !Player.isMoving()) {
+             if (Banking.isInBank() && Banking.isBankScreenOpen()) {
                  return State.DEPOSIT_ITEMS;
              } else {
                  return State.WALK_TO_BANK;
              }
-        } else if (!Banking.isBankScreenOpen() && !Player.isMoving()) {
+        } else if (!Player.isMoving() && Player.getAnimation() == -1) {
             RSObject[] nearest_flax = Objects.findNearest(3, FLAX_PLANT_ID);
 
             if (nearest_flax.length > 0) {
-            	// set nearest flax as target
-            	target_flax = nearest_flax[0];
-            	// anti ban compliance
-                if (nearest_flax.length > 1 && this.abc.BOOL_TRACKER.USE_CLOSEST.next()) {
+                // set nearest flax as target
+                target_flax = nearest_flax[0];
+                // anti ban compliance
+                if (nearest_flax.length > 1 && this.anti_ban.abc.BOOL_TRACKER.USE_CLOSEST.next()) {
                     if (nearest_flax[1].getPosition().distanceToDouble(nearest_flax[0]) < 3.0)
                         target_flax = nearest_flax[1];
                 }
                 
-                if (abc.BOOL_TRACKER.HOVER_NEXT.next()) {
-                	target_flax.hover();
+                if (anti_ban.abc.BOOL_TRACKER.HOVER_NEXT.next()) {
+                    target_flax.hover();
                 }
                 
                 return State.PICK_FLAX;
             }  else {
                 return State.WALK_TO_FLAX_FIELD;
             }
-        } else if (Player.isMoving()) {
-        	return State.WALKING;
+        } else if (Player.isMoving() || Player.getAnimation() > -1) {
+            return State.WALKING;
         }
         // if we dont satisfy any of the above conditions, we may have a problem
         return State.SOMETHING_WENT_WRONG;
-
-        
     }
 
    enum State {
@@ -140,65 +132,20 @@ public class FlawlessFlaxPicker extends Script implements Painting {
         SOMETHING_WENT_WRONG,
         WALKING
     }
-   
-   private void walk(boolean to_bank) {
-	   	checkRun();
-	    WebWalking.walkTo(getTile(to_bank));
-	    handleWait();
-   }
 
-    private boolean depositAll() {
-    	if (Inventory.isFull()) {
-	        int items_deposited = Banking.depositAll();
-	        
-	        // if we deposited any items, print the number
-	        if (items_deposited > 0) {
-	        	General.sleep(845, 3558);
-	            log("Deposited "+ items_deposited +" items.");
-	            // close bank
-	            closeBankScreen();
-	        }
-        
-	        return true;
-    	} else {
-    		return false;
+    private void pickFlax(RSObject flax) {
+    	if (clicking.collectAnimableObject(flax, "pick")) {
+	    	flax_picked ++;
+	        anti_ban.abc.BOOL_TRACKER.HOVER_NEXT.reset();
+	        anti_ban.abc.BOOL_TRACKER.USE_CLOSEST.reset();
     	}
     }
     
-    private boolean handleBanking() {
-        // we know we are in the bank, so try to open bank screen
-        boolean bank_screen_is_open = Banking.openBank();
-        
-        if (bank_screen_is_open) {
-        	General.sleep(250, 1340);
-            return depositAll();
-        }
-        
-        return false;
-    }
-
-    private void closeBankScreen() {
-        if (Banking.isBankScreenOpen()) {
-            Banking.close();
-        }
-    }
-
-    private void pickFlax(RSObject flax) {
-    	if (!Inventory.isFull()) {
-	        if (flax.isOnScreen() && flax.isClickable()) {
-	            flax.click("pick");
-	            flax_picked ++;
-	            
-	            abc.BOOL_TRACKER.HOVER_NEXT.reset();
-	            abc.BOOL_TRACKER.USE_CLOSEST.reset();
-	            // item interaction delay
-	            General.sleep(abc.DELAY_TRACKER.ITEM_INTERACTION.next());
-	        }
+    private void checkAntiban() {
+    	// dont call antiban every time possible
+    	if (General.random(1, 50) >= 45) {
+    		anti_ban.handleWait();
     	}
-    }
-
-    private void log(String message) {
-        println(message);
     }
 
     public void onPaint(Graphics g) {
@@ -212,9 +159,9 @@ public class FlawlessFlaxPicker extends Script implements Painting {
     
         g.setFont(font);
         g.setColor(new Color(200, 200, 200));
-        g.drawString("Runtime: " + Timing.msToString(run_time), 330, 395);
-        g.drawString("Flax Picked: " + flax_picked, 330, 415);
-        g.drawString("Flax Per Hour: "+ flax_per_hour, 330, 435);
+        g.drawString("Runtime: " + Timing.msToString(run_time), 320, 393);
+        g.drawString("Flax Picked: " + flax_picked, 320, 412);
+        g.drawString("Flax Per Hour: "+ flax_per_hour, 320, 433);
     }
 
     private Image getImage(String url) {
@@ -225,67 +172,4 @@ public class FlawlessFlaxPicker extends Script implements Painting {
             return null;
         }
     }
-    
-    private void checkRun() {
-    	final int run_energy = Game.getRunEnergy();
-    	if (run_energy >= abc.INT_TRACKER.NEXT_RUN_AT.next() && !Game.isRunOn()) {
-    		log("Turning run on");
-    		WebWalking.setUseRun(true);
-    		abc.INT_TRACKER.NEXT_RUN_AT.reset();
-    	}
-    }
-    
-    private void handleWait() {
-    	log("Checking timer based anti-ban");
-    	while (Player.isMoving()) {
-    		// control cpu usage
-    		General.sleep(50, 250);
-    		
-    		if (System.currentTimeMillis() >= abc.TIME_TRACKER.EXAMINE_OBJECT.next()) {
-    			abc.performExamineObject();
-    		}
-    		
-    		if (System.currentTimeMillis() >= abc.TIME_TRACKER.ROTATE_CAMERA.next()) {
-    			abc.performRotateCamera();
-    		}
-    		
-    		if (System.currentTimeMillis() >= abc.TIME_TRACKER.PICKUP_MOUSE.next()) {
-    			abc.performPickupMouse();
-    		}
-    		
-    		if (System.currentTimeMillis() >= abc.TIME_TRACKER.LEAVE_GAME.next()) {
-    			abc.performLeaveGame();
-    		}
-    		
-    		if (System.currentTimeMillis() >= abc.TIME_TRACKER.RANDOM_MOUSE_MOVEMENT.next()) {
-    			abc.performRandomMouseMovement();
-    		}
-    		
-    		if (System.currentTimeMillis() >= abc.TIME_TRACKER.RANDOM_MOUSE_MOVEMENT.next()) {
-    			abc.performRandomRightClick();
-    		}
-    		
-    		if (System.currentTimeMillis() >= abc.TIME_TRACKER.CHECK_EQUIPMENT.next()) {
-    			abc.performEquipmentCheck();
-    		}
-    		
-    		if (System.currentTimeMillis() >= abc.TIME_TRACKER.CHECK_FRIENDS.next()) {
-    			abc.performFriendsCheck();
-    		}
-    		
-    		if (System.currentTimeMillis() >= abc.TIME_TRACKER.CHECK_COMBAT.next()) {
-    			abc.performCombatCheck();
-    		}
-    		
-    		if (System.currentTimeMillis() >= abc.TIME_TRACKER.CHECK_MUSIC.next()) {
-    			abc.performMusicCheck();
-    		}
-    		
-    		if (System.currentTimeMillis() >= abc.TIME_TRACKER.CHECK_QUESTS.next()) {
-    			abc.performQuestsCheck();
-    		}
-    	}
-    }
-
-
 }
