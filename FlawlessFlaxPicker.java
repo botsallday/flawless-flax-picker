@@ -36,8 +36,9 @@ public class FlawlessFlaxPicker extends Script implements Painting {
 	private Transportation transport = new Transportation();
 	private Banker banker = new Banker();
 	private Clicking clicking = new Clicking();
-    private final Image img = getImage("http://s15.postimg.org/izj9po1wr/Flawless_Flax_Picker.png");
+    private final Image img = getImage("http://i.imgur.com/1a4Aimp.png");
     private final int FLAX_PLANT_ID = 7134;
+    private final String FLAX_NAME = "Flax";
     private static final long startTime = System.currentTimeMillis();
     private int flax_picked = 0;
     private RSObject target_flax;
@@ -64,7 +65,6 @@ public class FlawlessFlaxPicker extends Script implements Painting {
                         } else {
                         	transport.checkRun();
                         	WebWalking.walkTo(transport.getTile(bank_area, true));
-                        	println("Didnt work");
                         }
                         break;
                     case DEPOSIT_ITEMS:
@@ -98,7 +98,7 @@ public class FlawlessFlaxPicker extends Script implements Painting {
                  return State.WALK_TO_BANK;
              }
         } else if (!Player.isMoving() && Player.getAnimation() == -1) {
-            RSObject[] nearest_flax = Objects.findNearest(3, FLAX_PLANT_ID);
+            RSObject[] nearest_flax = Objects.findNearest(3, FLAX_NAME);
 
             if (nearest_flax.length > 0) {
                 // set nearest flax as target
@@ -158,10 +158,11 @@ public class FlawlessFlaxPicker extends Script implements Painting {
         int flax_per_hour = (int)(flax_picked * 3600000 / run_time);
     
         g.setFont(font);
-        g.setColor(new Color(200, 200, 200));
-        g.drawString("Runtime: " + Timing.msToString(run_time), 320, 393);
-        g.drawString("Flax Picked: " + flax_picked, 320, 412);
-        g.drawString("Flax Per Hour: "+ flax_per_hour, 320, 433);
+        g.setColor(new Color(0, 0, 0));
+        g.drawString(""+Timing.msToString(run_time), 80, 450);
+        g.drawString(""+flax_picked, 100, 400);
+        g.drawString(""+flax_per_hour, 120, 425);
+        g.drawString(""+(flax_picked * 13), 300, 450);
     }
 
     private Image getImage(String url) {
