@@ -107,12 +107,16 @@ public class FlawlessSeersFlaxCore {
                 case CLIMB_DOWN_LADDER:
                 	General.println("Climbing down ladder");
                 	// search for ladder in the room
-                	climbLadder(6);
+                	if (climbLadder(6)) {
+                		General.println("Climbed ladder");
+                	};
                 	break;
                 case CLIMB_UP_LADDER:
                 	General.println("Climbing up ladder");
                 	// search for a ladder at the distance we are from the one we want
-                	climbLadder(Player.getPosition().distanceTo(BADAreas.SEERS_SPIN_LADDER_TILE) + 1);
+                	if (climbLadder(Player.getPosition().distanceTo(BADAreas.SEERS_SPIN_LADDER_TILE) + 1)) {
+                		General.println("Climbed ladder");
+                	};
                 	break;
                 case WALK_OUTSIDE:
                 	General.println("Walking outside");
@@ -281,12 +285,10 @@ public class FlawlessSeersFlaxCore {
 			if (ladder[0].click(direction)) {
 				if (direction == "Climb-down") {
 					// wait until we are downstairs
-					Timing.waitCondition(BADConditions.ON_GROUND_FLOOR, General.random(4000, 6000));
-					return true;
+					return Timing.waitCondition(BADConditions.ON_GROUND_FLOOR, General.random(4000, 6000));
 				} else {
 					// wait until we are upstairs
-					Timing.waitCondition(BADConditions.ON_FIRST_FLOOR, General.random(4000, 6000));
-				    return true;
+					return Timing.waitCondition(BADConditions.ON_FIRST_FLOOR, General.random(4000, 6000));
 				}
 			}
 		}
@@ -301,9 +303,8 @@ public class FlawlessSeersFlaxCore {
     }
     
     private boolean withdrawFlax() {
-    	if (BANKER.withdraw(FLAX, 28)) {
+    	if (BANKER.withdraw(FLAX, 28) && Timing.waitCondition(BADConditions.hasItem("Flax"), General.random(2000, 4000))) {
     		General.println("Withdrew flax");
-    		Timing.waitCondition(BADConditions.hasItem("Flax"), General.random(2000, 4000));
     		return true;
     	}
     	
@@ -336,9 +337,9 @@ public class FlawlessSeersFlaxCore {
 			if (sp != null) {
 				General.println("Clicking make x");
 				// click make x option
-				sp.click("Make X");
-				// wait for interface to close
-				Timing.waitCondition(getInterfaceCondition(false), General.random(3000, 5000));
+				if (sp.click("Make X")) {
+					Timing.waitCondition(getInterfaceCondition(false), General.random(3000, 5000));
+				};
 				// type amount
 				typeAmount();
 				// wait while it spins
@@ -366,15 +367,18 @@ public class FlawlessSeersFlaxCore {
     private void walkOutside() {
     	TRANSPORT.nav().setStoppingCondition(BADConditions.nearTile(BADAreas.SEERS_SPIN_DOOR_TILE, 2));
     	TRANSPORT.nav().setStoppingConditionCheckDelay(General.random(1000, 2000));
-    	TRANSPORT.nav().traverse(BADAreas.SEERS_SPIN_DOOR_AREA.getRandomTile());
-    	Timing.waitCondition(BADConditions.inArea(BADAreas.SEERS_SPIN_DOOR_AREA), General.random(16000, 20000));
+    	if (TRANSPORT.nav().traverse(BADAreas.SEERS_SPIN_DOOR_AREA.getRandomTile())) {
+        	Timing.waitCondition(BADConditions.inArea(BADAreas.SEERS_SPIN_DOOR_AREA), General.random(16000, 20000));
+
+    	};
     }
     
     private void walkInside() {
     	TRANSPORT.nav().setStoppingCondition(BADConditions.nearTile(BADAreas.SEERS_SPIN_LADDER_TILE, 2));
     	TRANSPORT.nav().setStoppingConditionCheckDelay(General.random(1000, 2000));
-    	TRANSPORT.nav().traverse(BADAreas.SEERS_SPIN_LADDER_AREA.getRandomTile());
-    	Timing.waitCondition(BADConditions.inArea(BADAreas.SEERS_SPIN_LADDER_AREA), General.random(5000, 8000));
+    	if (TRANSPORT.nav().traverse(BADAreas.SEERS_SPIN_LADDER_AREA.getRandomTile())) {
+        	Timing.waitCondition(BADConditions.inArea(BADAreas.SEERS_SPIN_LADDER_AREA), General.random(5000, 8000));
+    	};
     }
     
     @SuppressWarnings({ "deprecation"})
@@ -412,12 +416,8 @@ public class FlawlessSeersFlaxCore {
     		Camera.turnToTile(flax);
     	}
     	// click the flax 
-		if (flax.isClickable()) {
-			if (flax.click("Pick")) {
-				// wait for picking, and check hover next anti ban
-				Timing.waitCondition(BADConditions.WAIT_IDLE, General.random(3000, 5000));
-				flax_picked++;
-			}
+		if (flax.isClickable() && flax.click("Pick") && Timing.waitCondition(BADConditions.WAIT_IDLE, General.random(2500, 5000))) {
+			flax_picked++;
 		} 
     }
     

@@ -121,7 +121,7 @@ public class BADConditions {
 			@Override
 			public boolean active()
 			{
-				General.sleep(100);
+				General.sleep(1000);
 				return Banking.isBankScreenOpen();
 			}
 		};
@@ -173,6 +173,7 @@ public class BADConditions {
     	long time = System.currentTimeMillis();
     	// we will break if the player animation moves from idle or we wait the requested amount of time
     	while (Player.getAnimation() == -1) {
+    		General.sleep(100);
     		if (System.currentTimeMillis() > time + amount) {
     			return true;
     		}

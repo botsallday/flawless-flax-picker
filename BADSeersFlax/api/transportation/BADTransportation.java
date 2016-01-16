@@ -15,16 +15,15 @@ import org.tribot.api2007.types.RSNPC;
 import org.tribot.api2007.types.RSObject;
 import org.tribot.api2007.types.RSTile;
 import org.tribot.api2007.util.DPathNavigator;
-
-import scripts.AntiBan;
+import scripts.BADSeersFlax.api.antiban.BADAntiBan;
 
 public class BADTransportation {
 	
-	private AntiBan anti_ban;
+	private BADAntiBan anti_ban;
 	
 	
 	public BADTransportation() {
-		anti_ban = new AntiBan();
+		anti_ban = new BADAntiBan();
 	}
 	
     public void checkRun() {
