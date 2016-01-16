@@ -1,0 +1,184 @@
+package scripts.BADSeersFlax.api.conditions;
+
+import org.tribot.api.General;
+import org.tribot.api.types.generic.Condition;
+import org.tribot.api2007.Banking;
+import org.tribot.api2007.GameTab;
+import org.tribot.api2007.Inventory;
+import org.tribot.api2007.Player;
+import org.tribot.api2007.types.RSArea;
+import org.tribot.api2007.types.RSTile;
+
+import scripts.BADSeersFlax.api.interfaces.BADInterfaces;
+
+public class BADConditions {
+	public static final Condition IN_BANK = inBank();
+	public static final Condition SPUN_FLAX = spunFlax();
+	public static final Condition BANK_OPEN = bankOpen();
+	public static final Condition INVENTORY_EMPTY = inventoryEmpty();
+	public static final Condition INVENTORY_TAB_OPEN = inventoryOpen();
+	public static final Condition WAIT_IDLE = isIdle();
+	public static final Condition ON_GROUND_FLOOR = onGroundFloor();
+	public static final Condition ON_FIRST_FLOOR = onFirstFloor();
+	
+	private static Condition inventoryEmpty() {
+		return new Condition() {
+			@Override
+			public boolean active()
+			{
+				General.sleep(100);
+				return Inventory.getAll().length == 0;
+			}
+		};
+	}
+	
+	public static Condition interfaceOpen(int parent, int child) {
+		return new Condition() {
+			@Override
+			public boolean active() {
+				General.sleep(100);
+				return BADInterfaces.getChildInterface(parent, child) != null;
+			}
+		};
+	}
+	
+	public static Condition interfaceClosed(int parent, int child) {
+		return new Condition() {
+			@Override
+			public boolean active() {
+				General.sleep(100);
+				return BADInterfaces.getChildInterface(parent, child) == null;
+			}
+		};
+	}
+	
+	private static Condition onGroundFloor() {
+		return new Condition() {
+			@Override
+			public boolean active()
+			{
+				General.sleep(100);
+				return Player.getPosition().getPlane() == 0;
+			}
+		};
+	}
+	
+	private static Condition onFirstFloor() {
+		return new Condition() {
+			@Override
+			public boolean active()
+			{
+				General.sleep(100);
+				return Player.getPosition().getPlane() == 1;
+			}
+		};
+	}
+	
+	private static Condition isIdle() {
+		return new Condition() {
+			@Override
+			public boolean active() {
+				General.sleep(100);
+				return waitIdle(1000);
+			}
+		};
+	}
+	
+	private static Condition inventoryOpen() {
+		return new Condition() {
+	        @Override
+	        public boolean active() {
+	        	General.sleep(1000);
+	        	return GameTab.getOpen() == GameTab.TABS.INVENTORY;
+	        }
+		};
+	}
+	
+	public static Condition hasItem(String name) {
+		return new Condition() {
+			@Override
+			public boolean active()
+			{
+				General.sleep(100);
+				return Inventory.getCount(name) > 0;
+			}
+		};
+	}
+	
+	private static Condition inBank() {
+		return new Condition() {
+			@Override
+			public boolean active()
+			{
+				General.sleep(100);
+				return Banking.isInBank();
+			}
+		};
+	}
+	
+	private static Condition bankOpen() {
+		return new Condition() {
+			@Override
+			public boolean active()
+			{
+				General.sleep(100);
+				return Banking.isBankScreenOpen();
+			}
+		};
+	}
+	
+	
+	public static Condition inArea(RSArea area) {
+		return new Condition() {
+			@Override
+			public boolean active()
+			{
+				General.sleep(100);
+				return area.contains(Player.getPosition());
+			}
+		};
+	}
+	
+	public static Condition nearTile(RSTile tile, int distance) {
+		return new Condition() {
+			@Override
+			public boolean active() {
+				General.sleep(100);
+				return Player.getPosition().distanceTo(tile) <= distance;
+			}
+		};
+	}
+	
+	private static Condition spunFlax() {
+		return new Condition() {
+	        @Override
+	        public boolean active() {
+	        	General.sleep(1000);
+	        	// see if we have flax left
+	        	if (Inventory.getCount("Flax") > 0) {
+	        		// see if we are still spinning (handles reaction to leveling up which makes you stop spinning)
+	        		if (Player.getAnimation() == -1) {
+	        			// since we will be idle for about 1/2 second we must ensure that we are actually done spinning and not in between spins
+	        			return waitIdle(2000);
+	        		}
+	        		return false;
+	        	}
+				return true;
+	        }
+		};
+	};
+	
+    public static boolean waitIdle(long amount) {
+    	// capture current time
+    	long time = System.currentTimeMillis();
+    	// we will break if the player animation moves from idle or we wait the requested amount of time
+    	while (Player.getAnimation() == -1) {
+    		if (System.currentTimeMillis() > time + amount) {
+    			return true;
+    		}
+    	}
+    	return false;
+    }
+	
+
+}
