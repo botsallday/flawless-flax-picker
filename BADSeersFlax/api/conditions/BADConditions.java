@@ -3,6 +3,7 @@ package scripts.BADSeersFlax.api.conditions;
 import org.tribot.api.General;
 import org.tribot.api.types.generic.Condition;
 import org.tribot.api2007.Banking;
+import org.tribot.api2007.Game;
 import org.tribot.api2007.GameTab;
 import org.tribot.api2007.Inventory;
 import org.tribot.api2007.Player;
@@ -28,6 +29,19 @@ public class BADConditions {
 			{
 				General.sleep(100);
 				return Inventory.getAll().length == 0;
+			}
+		};
+	}
+	
+	public static Condition crosshairChange() {
+		int crosshair_state = Game.getCrosshairState();
+		
+		return new Condition() {
+			@Override
+			public boolean active()
+			{
+				General.sleep(100);
+				return Game.getCrosshairState() != crosshair_state;
 			}
 		};
 	}

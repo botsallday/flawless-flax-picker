@@ -6,20 +6,22 @@ import org.tribot.api.types.generic.Condition;
 import org.tribot.api.util.ABCUtil;
 import org.tribot.api2007.Camera;
 import org.tribot.api2007.GameTab;
-import org.tribot.api2007.Player;
 import org.tribot.api2007.Skills;
 import org.tribot.api2007.types.RSNPC;
 
+@SuppressWarnings("deprecation")
 public class BADAntiBan {
 	
 	public String antiban_status;
 	public long antiban_performed;
+	@SuppressWarnings("deprecation")
 	public ABCUtil abc;
 	private long last_anti_ban_action;
 	private Skills.SKILLS hover_skill;
 	public boolean ignore_examine;
 	
-    public BADAntiBan() {
+    @SuppressWarnings("deprecation")
+	public BADAntiBan() {
     	General.useAntiBanCompliance(true);
     	log("Starting antiban");
     	abc = new ABCUtil();
@@ -69,7 +71,8 @@ public class BADAntiBan {
 		
     }
     
-    public boolean handleHoverNextNPC(RSNPC npc) {
+    @SuppressWarnings("deprecation")
+	public boolean handleHoverNextNPC(RSNPC npc) {
     	if (abc.BOOL_TRACKER.HOVER_NEXT.next()) {
     		if (!npc.isOnScreen()) {
     			Camera.turnToTile(npc);
@@ -83,10 +86,11 @@ public class BADAntiBan {
     	return false;
     }
     
-    public RSNPC handleUseClosest(RSNPC a, RSNPC b) {
+    @SuppressWarnings("deprecation")
+	public RSNPC handleUseClosest(RSNPC a, RSNPC b) {
     	
 		if (abc.BOOL_TRACKER.USE_CLOSEST.next()) {
-			if (b.getPosition().distanceTo(a.getPosition()) < 4) {
+			if (b.getPosition().distanceTo(a.getPosition()) < 3) {
 				abc.BOOL_TRACKER.USE_CLOSEST.reset();
 				return b;
 			}
@@ -96,21 +100,32 @@ public class BADAntiBan {
     	
     }
     
-    public boolean handleItemInteractionDelay() {
+    @SuppressWarnings("deprecation")
+	public boolean handleItemInteractionDelay() {
     	// handle delay between interacting with multiple items
     	General.sleep(abc.DELAY_TRACKER.ITEM_INTERACTION.next());
     	abc.DELAY_TRACKER.ITEM_INTERACTION.reset();
     	return true;
     }
     
-    public boolean handleSwitchObjectCombatDelay() {
+    @SuppressWarnings("deprecation")
+	public boolean handleSwitchObjectCombatDelay() {
     	// handle waiting between fighting npcs
     	General.sleep(abc.DELAY_TRACKER.SWITCH_OBJECT_COMBAT.next());
     	abc.DELAY_TRACKER.SWITCH_OBJECT_COMBAT.reset();
     	return true;
     }
     
-    public boolean handleNewObjectCombatDelay() {
+    @SuppressWarnings("deprecation")
+	public boolean handleSwitchObjectDelay() {
+    	// handle waiting between fighting npcs
+    	General.sleep(abc.DELAY_TRACKER.SWITCH_OBJECT.next());
+    	abc.DELAY_TRACKER.SWITCH_OBJECT.reset();
+    	return true;
+    }
+    
+    @SuppressWarnings("deprecation")
+	public boolean handleNewObjectCombatDelay() {
     	// handle waiting for a new object
     	General.sleep(abc.DELAY_TRACKER.NEW_OBJECT_COMBAT.next());
     	abc.DELAY_TRACKER.NEW_OBJECT_COMBAT.reset();
@@ -121,6 +136,7 @@ public class BADAntiBan {
     	System.out.println(string);
 	}
 
+	@SuppressWarnings("deprecation")
 	public void handleWait() {
     	antiban_status = "Checking";
 		abc.performTimedActions(this.hover_skill);

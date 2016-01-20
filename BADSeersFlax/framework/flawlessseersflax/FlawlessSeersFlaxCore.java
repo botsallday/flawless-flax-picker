@@ -311,40 +311,48 @@ public class FlawlessSeersFlaxCore {
     	return false;
     }
     
+    private void useSpinningWheel() {
+		// find a spinning wheel
+		RSObject[] wheel = Objects.find(10, "Spinning Wheel");
+		// null check
+		if (wheel.length > 0 && Inventory.getCount("Flax") > 0) {
+			General.println("Found wheel");
+			if (!wheel[0].isOnScreen()) {
+				Camera.turnToTile(wheel[0]);
+			}
+			// try to click the spin option
+			if (wheel[0].click("Spin")) {
+				// wait for the interface to open up
+				Timing.waitCondition(getInterfaceCondition(true), General.random(3000, 5000));
+				// be like a human and make sure inventory is open
+				TABS.openTab(GameTab.TABS.INVENTORY);
+			}
+		}
+    }
+    
+    private void useInterface() {
+		// cache interface since it can return null
+		RSInterfaceChild sp = getInterface();
+		if (sp != null) {
+			General.println("Clicking make x");
+			// click make x option
+			if (sp.click("Make X")) {
+				Timing.waitCondition(getInterfaceCondition(false), General.random(3000, 5000));
+			};
+			// type amount
+			typeAmount();
+			// wait while it spins
+    		Timing.waitCondition(BADConditions.SPUN_FLAX, General.random(55000, 70000));
+		}
+    }
+    
     private void spin() {
  	   
 		// check if menu is open
 		if (getInterface() == null) {
-			// find a spinning wheel
-    		RSObject[] wheel = Objects.find(10, "Spinning Wheel");
-    		// null check
-    		if (wheel.length > 0 && Inventory.getCount("Flax") > 0) {
-    			General.println("Found wheel");
-    			if (!wheel[0].isOnScreen()) {
-    				Camera.turnToTile(wheel[0]);
-    			}
-    			// try to click the spin option
-    			if (wheel[0].click("Spin")) {
-    				// wait for the interface to open up
-    				Timing.waitCondition(getInterfaceCondition(true), General.random(3000, 5000));
-    				// be like a human and make sure inventory is open
-    				TABS.openTab(GameTab.TABS.INVENTORY);
-    			}
-    		}
+			useSpinningWheel();
 		} else {
-			// cache interface since it can return null
-			RSInterfaceChild sp = getInterface();
-			if (sp != null) {
-				General.println("Clicking make x");
-				// click make x option
-				if (sp.click("Make X")) {
-					Timing.waitCondition(getInterfaceCondition(false), General.random(3000, 5000));
-				};
-				// type amount
-				typeAmount();
-				// wait while it spins
-	    		Timing.waitCondition(BADConditions.SPUN_FLAX, General.random(55000, 70000));
-			}
+			useInterface();
 		}
     }
     
@@ -388,7 +396,7 @@ public class FlawlessSeersFlaxCore {
     	General.println("Flax in area");
     	General.println(flax.length);
     	// since we are finding a new item, we will wait the delay timer
-    	ANTIBAN.handleItemInteractionDelay();
+    	ANTIBAN.handleSwitchObjectDelay();
     	// null check
     	if (flax.length > 0) {
     		// check if we should use the closest
@@ -396,7 +404,7 @@ public class FlawlessSeersFlaxCore {
     			General.println("Pick flax 1");
     			if (ANTIBAN.abc.BOOL_TRACKER.USE_CLOSEST.next()) {
     				// see if next is within 3 tiles of closest
-    				if (flax[0].getPosition().distanceTo(flax[1]) < 4) {
+    				if (flax[0].getPosition().distanceTo(flax[1]) < 3) {
     					// we should use next
     					pick(flax[1]);
     					// reset the tracker
@@ -418,7 +426,20 @@ public class FlawlessSeersFlaxCore {
     	// click the flax 
 		if (flax.isClickable() && flax.click("Pick") && Timing.waitCondition(BADConditions.WAIT_IDLE, General.random(2500, 5000))) {
 			flax_picked++;
+			// handle hovering next
+			handleHoverNext();
 		} 
+    }
+    
+    private void handleHoverNext() {
+    	RSObject[] flax = Objects.findNearest(3, FLAX);
+    	
+    	if (flax.length > 0 && ANTIBAN.abc.BOOL_TRACKER.HOVER_NEXT.next()) {
+    		if (flax[0].hover()) {
+    			Timing.waitCondition(BADConditions.crosshairChange(), General.random(2500, 6000));
+    			ANTIBAN.abc.BOOL_TRACKER.HOVER_NEXT.reset();
+    		}
+    	}
     }
     
     private boolean nearArea(RSArea area) {
